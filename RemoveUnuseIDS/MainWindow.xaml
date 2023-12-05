@@ -1,0 +1,136 @@
+﻿<Window x:Class="RemoveUnuseIDS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RemoveUnuseIDS"
+        mc:Ignorable="d"
+        Title="删除字符资源" Height="650" Width="1200">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="170"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="0,10,0,0" Grid.Column="0" Orientation="Vertical" >
+                <Label Content="步骤1:" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+                <StackPanel  VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal" >
+                    <Label VerticalAlignment="Center" Content="正则表达式："></Label>
+                    <TextBox Margin="5" Width="135" Text="{Binding FilterText}" IsEnabled="{Binding IsUseRegex}"></TextBox>
+                    <CheckBox  VerticalAlignment="Center" Content="启用" Name="cb_Regex" IsChecked="{Binding IsUseRegex}"  ></CheckBox>
+                    <Button Margin="5" Content="选择文件" Click="ChoseSrcFileClicked"></Button>
+                </StackPanel>
+                <Button Content="显示字符串" Margin="10,20" Name="showfilterStrings" Click="ShowFilterStrings_Click"></Button>
+            </StackPanel>
+            <StackPanel  Margin="0,10,0,0" Grid.Column="1"  Orientation="Vertical"  >
+                <Label  Content="步骤2(可选):" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+                <StackPanel VerticalAlignment="Center"  Orientation="Horizontal" >
+                    <Label Grid.Column="0" VerticalAlignment="Center" Content="前缀："></Label>
+                    <TextBox Margin="5" Width="80" Name="prefix" Text=""></TextBox>
+                    <Label Grid.Column="0" VerticalAlignment="Center" Content="后缀："></Label>
+                    <TextBox Margin="5" Width="80" Name="suffix"  Text=""></TextBox>
+                    <Button Margin="5" Content="添加" Name="Addprefixandsuffix" Click="Addprefixandsuffix_Click" ></Button>
+                    <Button Margin="5" Content="清除" Name="Deleteprefixandsuffix" Click="Deleteprefixandsuffix_Click" ></Button>
+                </StackPanel>
+                <StackPanel Margin="0,5,0,0"   Orientation="Horizontal" >
+                    <Label VerticalAlignment="Center" Content="文件名过滤:       "></Label>
+                    <TextBox Margin="5" Width="80" Name="filterFile"  Text=""></TextBox>
+                    <Button Margin="5" Content="添加" Name="AddfilterFile" Click="AddfilterFile_Click"></Button>
+                    <Button Margin="5" Content="清除" Name="DeletefilterFile" Click="DeletefilterFile_Click" ></Button>
+                </StackPanel>
+                <StackPanel Margin="0,5,0,0"   Orientation="Horizontal" >
+                    <Label VerticalAlignment="Center" Content="文件后缀名过滤:"></Label>
+                    <TextBox Margin="5" Width="80" Name="extensioname"  Text=""></TextBox>
+                    <Button Margin="5" Content="添加" Name="AddfilterExtensioName" Click="AddfilterExtensioName_Click" ></Button>
+                    <Button Margin="5" Content="清除" Name="DeletefilterExtensioName" Click="DeletefilterExtensioName_Click" ></Button>
+                </StackPanel>
+                <StackPanel Margin="0,5,0,0"   Orientation="Horizontal" >
+                    <Label VerticalAlignment="Center" Content="添加正则表达式:"></Label>
+                    <TextBox Margin="5" Width="80" Name="filterRegex"  Text=""></TextBox>
+                    <Button Margin="5" Content="添加" Name="AddfilterRegex" Click="AddfilterRegex_Click" ></Button>
+                    <Button Margin="5" Content="清除" Name="DeletefilterRegex" Click="DeletefilterRegex_Click" ></Button>
+                    <Button HorizontalAlignment="Center" Width="80" Height="20" Content="提示内容清除" Name="ClearTip"  Click="ClearTip_Click"></Button>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel  Grid.Column="2"  Orientation="Vertical" >
+                <Label Margin="0,10,0,0" Content="步骤3、4、5:" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+                <StackPanel Margin="50,5,0,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
+                    <Label Content="步骤3:"></Label>
+                    <Button Content="选择需要查找的文件夹或文件" Width="185" Height="25" Name="UnuseFileFind" Click="UnuseFileFind_Click"></Button>
+                    <Label Margin="20,0,0,0" Content="状态:"></Label>
+                    <Label Content="{Binding Status1}"></Label>
+                </StackPanel>
+                <StackPanel Margin="50,20,0,0"   Orientation="Horizontal" >
+                    <Label Content="步骤4:"></Label>
+                    <Button   HorizontalAlignment="Center" Width="185" Height="25" Content="选择你需要删除无用字符串的文件" Name="DeletestringFile" Click="DeletestringFile_Click"></Button>
+                    <Label Margin="20,0,0,0" Content="状态:"></Label>
+                    <Label Content="{Binding Status2}"></Label>
+                </StackPanel>
+                <StackPanel Margin="50,20,0,0" Orientation="Horizontal" >
+                    <Label Content="步骤5:"></Label>
+                    <Button   HorizontalAlignment="Center" Width="185" Height="25" Content="生成新文件" Name="GenenrateFile" Click="GenenrateFile_Click" ></Button>
+                    <CheckBox Margin="20,0,0,0" VerticalAlignment="Center" Content="覆盖原文件" ToolTip="勾选将会覆盖原文件" Name="FuGai"></CheckBox>
+
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <StackPanel  Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"  Orientation="Horizontal">
+                <Label Content="文件个数:"></Label>
+                <Label Content="{Binding Filternum}"></Label>
+            </StackPanel>
+            <StackPanel  Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
+                <Label Content="提示:"></Label>
+            </StackPanel>
+            <StackPanel  Grid.Row="0" Grid.Column="2"  HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
+                <Label Content="文件个数:"></Label>
+                <Label Grid.Row="0" Grid.Column="2" Content="{Binding Unusenum}"></Label>
+            </StackPanel>
+            
+            <ScrollViewer  Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                
+                <ListBox ItemsSource="{Binding FliterStrings}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Margin="5"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+            <ScrollViewer  Grid.Row="1" Grid.Column="1"  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                <ListBox ItemsSource="{Binding FindStringsDemo}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+
+                            <TextBlock Text="{Binding}" Margin="5"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+            <ScrollViewer  Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                <ListBox ItemsSource="{Binding UnuseStrings}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+
+                            <TextBlock Text="{Binding}" Margin="5"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>
