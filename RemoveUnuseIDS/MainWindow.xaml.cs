@@ -21,6 +21,9 @@ using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Windows.Forms;
 using MessageBox = System.Windows.MessageBox;
+using System.Threading;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace RemoveUnuseIDS
 {
@@ -32,9 +35,24 @@ namespace RemoveUnuseIDS
 
         //string pattern = @"<string\s+name=""([^""]+)"""; // 匹配 name 属性的正则表达式
         string Pattern = string.Empty; // 匹配 name 属性的正则表达式
+        int fileCount =0;
+        int Proessfilecount=0;
 
+        private int processbarvalue =0;
+        public int ProcessBarValue
+        {
+
+            get { return processbarvalue; }
+            set
+            {
+                processbarvalue = value;
+                
+                OnPropertyChanged(nameof(ProcessBarValue));
+            }
+        }
         private List<string> SrcStrings = new List<string>();
         HashSet<string> prefixandsuffixSet = new HashSet<string>();
+        HashSet<string> DprefixandDsuffixSet = new HashSet<string>();
         HashSet<string> filterFilesSet = new HashSet<string>();
         HashSet<string> filterExtensioNameSet = new HashSet<string>();
         HashSet<string> filterRegexSet = new HashSet<string>();
@@ -44,13 +62,15 @@ namespace RemoveUnuseIDS
         private List<string> filterExtensioName = new List<string>();
         string[] DeleteStringDir = Array.Empty<string>(); // 创建一个空的字符串数组
 
-        
+        HashSet<string> UnuseKeys=new HashSet<string>();
         private List<string> filterFiles = new List<string>();
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-        private string filtertext = @"<string\s+name=""([^""]+)""";
+        //private string filtertext = @"<string\s+name=""([^""]+)""";
+        private string filtertext = string.Empty;
+        public bool isAuto = false;
         public string FilterText
         {
 
@@ -80,9 +100,11 @@ namespace RemoveUnuseIDS
             get { return isuseregex; }
             set
             {
-                isuseregex = value;
-                ShowFilterStrings();
-                OnPropertyChanged(nameof(IsUseRegex));
+                if (isuseregex != value) { 
+                    isuseregex = value;
+                    ShowFilterStrings();
+                    OnPropertyChanged(nameof(IsUseRegex));
+                }
             }
         }
         private string status1 = "×";
@@ -146,16 +168,70 @@ namespace RemoveUnuseIDS
             set
             {
                 unuseStrings = value;
+                if (value.Count > 0)
+                {
+                    Status1 = "√";
+                }
+                else
+                {
+                    Status1 = "×";
+
+                }
                 OnPropertyChanged(nameof(UnuseStrings));
             }
         }
         private List<List<string>> prefixandsuffix = new List<List<string>>();
+        private List<List<string>> DprefixandDsuffix = new List<List<string>>();
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
-            OnPropertyChanged(nameof(FliterStrings));
-            OnPropertyChanged(nameof(FindStringsDemo));
+            string jsonFilePath = @"config.json";
+            if (File.Exists(jsonFilePath))
+            {
+                string jsonContent = File.ReadAllText(jsonFilePath);
+                JObject jsonObject = JObject.Parse(jsonContent);
+
+                MyConfiguration myConfiguration = JsonConvert.DeserializeObject<MyConfiguration>(jsonContent);
+                isAuto = myConfiguration.AutoMode;
+                if (isAuto)
+                {
+                    MyParams myParams = myConfiguration.Params;
+                    srcfilenames = myParams.SrcStrings_Path;
+                    IsUseRegex = myParams.UseRegex;
+                    FilterText = myParams.Regex;
+                    ShowFilterStrings();
+                    //过滤添加
+
+                    prefixandsuffix = myParams.prefixandsuffix;
+                    DprefixandDsuffix = myParams.Delete_prefixandsuffix;
+                    foreach (var prefixsuffix in prefixandsuffix)
+                    {
+                        prefixandsuffixSet.Add(prefixsuffix[0] + "check" + prefixsuffix[1]);
+                    }
+                    foreach (var prefixsuffix in DprefixandDsuffix)
+                    {
+                        DprefixandDsuffixSet.Add(prefixsuffix[0] + "check" + prefixsuffix[1]);
+                    }
+                    if (myParams.UseFilter)
+                    {
+                        filterExtensioName = myParams.ExtensionName_Filter;
+                        filterExtensioNameSet = new HashSet<string>(filterExtensioName);
+                        filterFiles = myParams.FileName_Filter;
+                        filterFilesSet = new HashSet<string>(filterFiles);
+                        filterRegexs = myParams.Regex_Filter;
+                        filterRegexSet = new HashSet<string>(filterRegexs);
+                    }
+                    UnuseKeys = FliterStrings.ToHashSet();
+                    UnuseFileFinding(myParams.FindFileDir);
+                }
+            }
+            //bool AutoMode = (bool)jsonObject["AutoMode"];
+            //Params _params= (Params)jsonObject["Params"];
+            //if (AutoMode)
+            //{
+            //    Params _params = 
+            //}
 
 
 
@@ -173,7 +249,7 @@ namespace RemoveUnuseIDS
                 srcfilenames.Clear();
                 foreach (string fileName in openFileDialog.FileNames)
                 {
-                    srcfilenames.Add(fileName);                    
+                    srcfilenames.Add(fileName);
                 }
             }
         }
@@ -210,7 +286,7 @@ namespace RemoveUnuseIDS
             prefixandsuffix.Add(new List<string> { prefix.Text, suffix.Text });
             if (fliterStrings.Count > 0)
             {
-                findStringsdemo.Add($"添加前缀:  {prefix.Text}  ,后缀:  {suffix.Text}   Demo:       " + prefix.Text + fliterStrings[0] + suffix.Text);
+                findStringsdemo.Add($"步骤2：添加前缀:  {prefix.Text}  ,后缀:  {suffix.Text}   Demo:       " + prefix.Text + fliterStrings[0] + suffix.Text);
             }
             prefix.Text = string.Empty;
             suffix.Text = string.Empty;
@@ -218,32 +294,60 @@ namespace RemoveUnuseIDS
 
         private void Deleteprefixandsuffix_Click(object sender, RoutedEventArgs e)
         {
-            findStringsdemo.Clear();
             prefixandsuffix.Clear();
             prefixandsuffixSet.Clear();
         }
 
         private void UnuseFileFind_Click(object sender, RoutedEventArgs e)
         {
-
-
             using (Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog dialog = new CommonOpenFileDialog())
             {
                 dialog.IsFolderPicker = true;
 
                 if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
                 {
+                    
+                    
                     UnuseStrings.Clear();
                     string folderPath = dialog.FileName;
                     Console.WriteLine("Selected folder: " + folderPath);
-                    HashSet<string> UnuseKeys = FliterStrings.ToHashSet();
-                    RecursivelySearchFiles(folderPath, UnuseKeys);
-                    UnuseStrings = new ObservableCollection<string>(UnuseKeys);
-                    Unusenum = UnuseStrings.Count.ToString();
-                    Status1= "√";
+                    UnuseKeys = FliterStrings.ToHashSet();
+                    //RecursivelySearchFiles(folderPath);
+                    //UnuseStrings = new ObservableCollection<string>(UnuseKeys);
+                    //Unusenum = UnuseStrings.Count.ToString();
+                    UnuseFileFinding(folderPath);
+                    //Status1 = "√";
+                    //UnuseFileFinding(folderPath, UnuseKeys);
+                    //Task.Run(() =>
+                    //{
+                    //    RecursivelySearchFiles(folderPath, UnuseKeys);
+
+                    //});
 
                 }
             }
+
+
+        }
+        private  void UnuseFileFinding( string folderPath)
+        {
+            // 在界面上启动任务并不阻塞 UI
+             Task.Run(() =>
+            {
+                fileCount = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories).Length;
+             
+                    
+  
+                RecursivelySearchFiles(folderPath);
+                if (ProcessBarValue != 100)
+                {
+                    ProcessBarValue = 100;
+                }
+                UnuseStrings = new ObservableCollection<string>(UnuseKeys);
+                Unusenum = UnuseStrings.Count.ToString();
+                Status1 = "√";
+            });
+            
         }
 
         private void AddfilterFile_Click(object sender, RoutedEventArgs e)
@@ -269,7 +373,11 @@ namespace RemoveUnuseIDS
             {
                 //string tempFilePath = "GenenrateFile" + System.IO.Path.GetExtension(filePath); // 临时文件路径
                 string tempFilePath = System.IO.Path.GetFileName(filePath); // 临时文件路径
-
+                if (tempFilePath == "config.json")
+                {
+                    MessageBox.Show("config.json 与本配置文件名冲突");
+                    return;
+                }
                 // 读取文件的所有行
                 string[] lines = File.ReadAllLines(filePath);
 
@@ -278,15 +386,37 @@ namespace RemoveUnuseIDS
                 {
                     foreach (string line in lines)
                     {
-                        // 检查当前行是否包含要删除的内容
-                        if (!stringsToRemove.Any(s => line.Contains('"' + s + '"')))
+                        bool iswrite = true;
+                        //如果没有添加前后缀就按原来的做 ，添加后 按添加后的结果删除
+                        if (DprefixandDsuffixSet.Count == 0)
                         {
-                            // 将不包含要删除内容的行写入新文件
+                            if (stringsToRemove.Any(s => line.Contains(s)))
+                            {
+                                // 将不包含要删除内容的行写入新文件
+                                iswrite = false;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var keyvalue in DprefixandDsuffix)
+                            {
+                                if (stringsToRemove.Any(s => line.Contains(keyvalue[0] + s + keyvalue[1])))
+                                {
+                                    // 将不包含要删除内容的行写入新文件
+                                    iswrite = false;
+                                }
+                            }
+                        }
+
+                        if (iswrite)
+                        {
                             writer.WriteLine(line);
                         }
+
                     }
                 }
-                if (FuGai.IsChecked == true) {
+                if (FuGai.IsChecked == true)
+                {
                     // 删除原始文件
                     File.Delete(filePath);
                     // 将临时文件重命名为原始文件名
@@ -300,7 +430,7 @@ namespace RemoveUnuseIDS
             }
         }
 
-        void RecursivelySearchFiles(string directory, HashSet<string> UnuseKeys)
+        void RecursivelySearchFiles(string directory )
         {
             try
             {
@@ -313,8 +443,10 @@ namespace RemoveUnuseIDS
                 foreach (string file in Directory.GetFiles(directory))
                 {
                     //过滤文件
+                    Proessfilecount++;
                     if (IsFilterFile(file))
                     {
+                        
                         continue;
                     }
                     List<string> Filelines = File.ReadLines(file).ToList();
@@ -340,7 +472,17 @@ namespace RemoveUnuseIDS
                                     {
                                         UnuseKeys.Remove(srcname);
                                     }
-                                    findStringsdemo.Add($"Found '{names}' in line: {line}");
+                                    this.Dispatcher.Invoke(delegate
+                                    {
+                                        int value = ((Proessfilecount * 100) / fileCount);
+                                        if (ProcessBarValue != value)
+                                        {
+                                            ProcessBarValue = value;
+                                        }                                        
+                                        findStringsdemo.Add($"Found '{names}' in line: {line}");
+
+                                    }
+                                   );
 
                                 }
                             }
@@ -350,12 +492,12 @@ namespace RemoveUnuseIDS
                 // 递归遍历子文件夹
                 foreach (string subDir in Directory.GetDirectories(directory))
                 {
-                    RecursivelySearchFiles(subDir, UnuseKeys);
+                    RecursivelySearchFiles(subDir);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -381,11 +523,10 @@ namespace RemoveUnuseIDS
                 {
                     System.Windows.MessageBox.Show("无要删除的字符串");
                 }
-
                 DeleteStringDir = openFileDialog.FileNames;
-                foreach(var item in DeleteStringDir)
+                foreach (var item in DeleteStringDir)
                 {
-                    FindStringsDemo.Add("选择删除的文件:"+item);
+                    FindStringsDemo.Add("选择删除的文件路径为:" + item);
                 }
                 Status2 = "√";
             }
@@ -395,7 +536,7 @@ namespace RemoveUnuseIDS
         {
             FindStringsDemo.Clear();
         }
-      
+
         private void ShowFilterStrings()
         {
             if (srcfilenames.Count <= 0)
@@ -459,12 +600,15 @@ namespace RemoveUnuseIDS
         {
             if (filterRegexSet.Contains(filterRegex.Text))
             {
-                MessageBox.Show("已经过滤该后缀");
+                MessageBox.Show("已经过滤该正则表达式");
                 return;
             }
             filterRegexs.Add(filterRegex.Text);
             filterRegexSet.Add(filterRegex.Text);
-            findStringsdemo.Add($"过滤与正则表达式‘filterRegex.Text’匹配的行");
+
+            findStringsdemo.Add($"过滤与正则表达式‘{filterRegex.Text}’匹配的行");
+            filterRegex.Clear();
+
 
         }
 
@@ -478,7 +622,7 @@ namespace RemoveUnuseIDS
         {
             foreach (var regex in filterRegexs)
             {
-                if (Regex.IsMatch(regex, line))
+                if (Regex.IsMatch(line, regex))
                 {
                     return true;
                 }
@@ -493,13 +637,18 @@ namespace RemoveUnuseIDS
                 MessageBox.Show("先选择文件");
                 return;
             }
+            if (UnuseStrings.Count == 0)
+            {
+                MessageBox.Show("没有废弃的字符串");
+                return;
+            }
             foreach (string fileName in DeleteStringDir)
             {
                 List<string> unuseStrings = new List<string>(UnuseStrings);
 
                 RemoveLinesFromFile(fileName, unuseStrings);
             }
-            if (FuGai.IsChecked==false)
+            if (FuGai.IsChecked == false)
             {
 
                 MessageBox.Show("文件生成成功");
@@ -507,7 +656,45 @@ namespace RemoveUnuseIDS
             else
             {
                 MessageBox.Show("成功覆盖原文件");
-            }
+            }                         
         }
+
+        private void AddDprefixandDsuffix_Click(object sender, RoutedEventArgs e)
+        {
+            if (DprefixandDsuffixSet.Contains(prefix.Text + "check" + suffix.Text))
+            {
+                MessageBox.Show("已经添加过");
+                return;
+            }
+            DprefixandDsuffixSet.Add(prefix.Text + "check" + suffix.Text);
+            DprefixandDsuffix.Add(new List<string> { D_prefix.Text, D_suffix.Text });
+            if (UnuseStrings.Count > 0)
+            {
+                findStringsdemo.Add($"步骤4：添加前缀:  {D_prefix.Text}  ,后缀:  {D_suffix.Text}   Demo:       " + D_prefix.Text + UnuseStrings[0] + D_suffix.Text);
+            }
+            D_prefix.Text = string.Empty;
+            D_suffix.Text = string.Empty;
+        }
+
+        private void DeleteDprefixandDsuffix_Click(object sender, RoutedEventArgs e)
+        {
+            DprefixandDsuffixSet.Clear();
+            DprefixandDsuffix.Clear();
+        }
+
+        private void ClearFIlterpara_Click(object sender, RoutedEventArgs e)
+        {
+            filterRegexs.Clear();
+            filterRegexSet.Clear();
+            filterFiles.Clear();
+            filterFilesSet.Clear();
+            filterExtensioName.Clear();
+            filterExtensioNameSet.Clear();
+            MessageBox.Show("清空成功");
+        }
+
+        
+
+        
     }
 }
