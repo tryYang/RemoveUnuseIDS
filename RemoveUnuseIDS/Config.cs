@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace RemoveUnuseIDS
 {
+
     class MyConfiguration
     {
-        public bool AutoMode { get; set; }  
-        public MyParams Params { get; set; }
+        public bool AutoMode { get; set; }
+        public string ConfigFileName { get; set; }
     }
     class MyParams
     {
@@ -22,7 +23,7 @@ namespace RemoveUnuseIDS
         public List<string> FileName_Filter { get; set; }
         public List<string> ExtensionName_Filter { get; set; }
         public List<string> Regex_Filter { get; set; }
-        public List<string> DeleteFilePath { get; set; }
+        public string[] DeleteFilePath { get; set; }
         public List<List<string>> Delete_prefixandsuffix { get; set; }
     }
 

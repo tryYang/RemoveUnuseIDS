@@ -1,0 +1,55 @@
+{
+
+
+
+    "UseRegex": "True",
+    "Regex": "\"(.*?)\" =",
+    "SrcStrings_Path": [
+      "E:\\task\\apple-strings\\en.lproj\\Localizable.strings"
+    ],
+    "prefixandsuffix": [
+      [ "@\"", "\"" ]
+      
+    ],
+
+    "UseFilter": "True",
+    "FileName_Filter": [
+      "Localizable"
+    ],
+    "ExtensionName_Filter": [
+      ".png",
+      ".gif",
+      ".jpg",
+      ".jpeg",
+      ".svg",
+      ".git",
+      ".bmp",
+      ".zip",
+      ".exe",
+      ".sln",
+      ".dll",
+      ".ico",
+      ".pdb",
+      ".compressed",
+      ".resources"
+
+    ],
+    "Regex_Filter": [
+      "^\\s*//"
+    ],
+    "FindFileDir":       "E:\\task\\apple-objectc-code"    ,
+    "DeleteFilePath": [
+      "E:\\task\\apple-strings\\en.lproj\\Localizable.strings"
+    ],
+    "Delete_prefixandsuffix": [
+      [ "\"", "\"" ]
+    ]
+  
+}
+    
+
+
+
+    
+
+

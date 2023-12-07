@@ -1,0 +1,56 @@
+{
+
+  "AutoMode": "True",
+  "Current_Code": "Windows",
+  "Params": {
+    "UseRegex": "True",
+    "Regex": "x:Key=\"(.*?)\"",
+    "SrcStrings_Path": [
+      "E:\\stash\\nero-swiftmirror-windows\\SwiftMirror\\NeroSwiftLink\\Resources\\Globalization\\en-US\\LocalizedDictionary.xaml"
+    ],
+    "prefixandsuffix": [
+      [ "\"", "\"" ],
+      [ "{StaticResource ", "}" ]
+    ],
+
+    "UseFilter": "True",
+    "FileName_Filter": [
+      "LocalizedDictionary"
+    ],
+    "ExtensionName_Filter": [
+      ".png",
+      ".gif",
+      ".jpg",
+      ".jpeg",
+      ".svg",
+      ".git",
+      ".bmp",
+      ".zip",
+      ".exe",
+      ".sln",
+      ".dll",
+      ".ico",
+      ".pdb",
+      ".compressed",
+      ".resources"
+
+    ],
+    "Regex_Filter": [
+      "^\\s*//"
+    ],
+    "FindFileDir": "E:\\stash\\nero-swiftmirror-windows\\SwiftMirror\\NeroSwiftLink",
+    "DeleteFilePath": [
+      "E:\\stash\\nero-swiftmirror-windows\\SwiftMirror\\NeroSwiftLink\\Resources\\Globalization\\en-US\\LocalizedDictionary.xaml"
+    ],
+    "Delete_prefixandsuffix": [
+      [ "\"", "\"" ]
+    ]
+  }
+}
+    
+
+
+
+    
+
+

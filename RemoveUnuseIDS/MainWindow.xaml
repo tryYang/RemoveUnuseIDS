@@ -5,15 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RemoveUnuseIDS"
         mc:Ignorable="d"
-        Title="删除字符资源" Height="650" Width="1200">
+        Title="删除字符资源" Height="650" Width="1300">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="190"></RowDefinition>
+            <RowDefinition Height="200"></RowDefinition>
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition ></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
@@ -60,19 +60,20 @@
             </StackPanel>
             <StackPanel  Grid.Column="2"  Orientation="Vertical" >
                 <Label Margin="0,10,0,0" Content="步骤3、4、5、6:" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
-                <StackPanel Margin="50,5,0,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
+                <StackPanel Margin="0,5,0,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
                     <Label Content="步骤3:"></Label>
                     <Button Content="选择需要查找的文件夹或文件" Width="185" Height="25" Name="UnuseFileFind" Click="UnuseFileFind_Click"></Button>
                     <Label Margin="20,0,0,0" Content="状态:"></Label>
                     <Label Content="{Binding Status1}"></Label>
                 </StackPanel>
-                <StackPanel Margin="95,10,20,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
+                <StackPanel Margin="45,10,20,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
                     <ProgressBar   Name="progressBar" Minimum="0" Maximum="100" Value="{Binding ProcessBarValue}" Visibility="Visible" Width="185" Height="20"/>
                     <Label Margin="5,0,0,0" Content="{Binding ProcessBarValue }"></Label>
                     <Label  Margin="-5,0,0,0" Content="%"></Label>
+                    <Label  Margin="-5,0,0,0" Content="{Binding ProcessFileName}"></Label>
                 </StackPanel>
 
-            <StackPanel Margin="50,5,0,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
+                <StackPanel Margin="0,5,0,0"  VerticalAlignment="Center"  Orientation="Horizontal" >
                     <Label Content="步骤4:"></Label>
                     <Label Grid.Column="0"  Content="前缀："></Label>
                     <TextBox Margin="5" Width="40" Name="D_prefix" Text=""></TextBox>
@@ -81,13 +82,13 @@
                     <Button Margin="5" Content="添加" Name="AddDprefixandDsuffix" Click="AddDprefixandDsuffix_Click"></Button>
                     <Button Margin="5" Content="清除" Name="DeleteDprefixandDsuffix" Click="DeleteDprefixandDsuffix_Click" ></Button>
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0"   Orientation="Horizontal" >
+                <StackPanel Margin="0,5,0,0"   Orientation="Horizontal" >
                     <Label Content="步骤5:"></Label>
                     <Button   HorizontalAlignment="Center" Width="185" Height="25" Content="选择你需要删除无用字符串的文件" Name="DeletestringFile" Click="DeletestringFile_Click"></Button>
                     <Label Margin="20,0,0,0" Content="状态:"></Label>
                     <Label Content="{Binding Status2}"></Label>
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal" >
+                <StackPanel Margin="0,5,0,0" Orientation="Horizontal" >
                     <Label Content="步骤6:"></Label>
                     <Button   HorizontalAlignment="Center" Width="185" Height="25" Content="生成新文件" Name="GenenrateFile" Click="GenenrateFile_Click" ></Button>
                     <CheckBox Margin="20,0,0,0" VerticalAlignment="Center" Content="覆盖原文件" ToolTip="勾选将会覆盖原文件" Name="FuGai"></CheckBox>
@@ -117,19 +118,19 @@
                 <Label Grid.Row="0" Grid.Column="2" Content="{Binding Unusenum}"></Label>
             </StackPanel>
 
-            <ScrollViewer  Name="ScrollViewer1" IsEnabled="True" Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
-                <StackPanel>
-                    <ListBox    ItemsSource="{Binding FliterStrings}">
+            <ScrollViewer   IsEnabled="True" Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+
+                <ListBox    ItemsSource="{Binding FliterStrings}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" Margin="5"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                </StackPanel>
+
 
             </ScrollViewer>
-            <ScrollViewer IsEnabled="True" Grid.Row="1" Grid.Column="1"  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+            <ScrollViewer Name="scrollviewer_tip" IsEnabled="True" Grid.Row="1" Grid.Column="1"  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
                 <ListBox ItemsSource="{Binding FindStringsDemo}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

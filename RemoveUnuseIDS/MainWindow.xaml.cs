@@ -24,6 +24,7 @@ using MessageBox = System.Windows.MessageBox;
 using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Path = System.IO.Path;
 
 namespace RemoveUnuseIDS
 {
@@ -35,8 +36,8 @@ namespace RemoveUnuseIDS
 
         //string pattern = @"<string\s+name=""([^""]+)"""; // 匹配 name 属性的正则表达式
         string Pattern = string.Empty; // 匹配 name 属性的正则表达式
-        int fileCount =0;
-        int Proessfilecount=0;
+        long   fileCount =0;
+        long  Proessfilecount=0;
 
         private int processbarvalue =0;
         public int ProcessBarValue
@@ -48,6 +49,17 @@ namespace RemoveUnuseIDS
                 processbarvalue = value;
                 
                 OnPropertyChanged(nameof(ProcessBarValue));
+            }
+        }
+        private string processfilename = string.Empty;
+        public string ProcessFileName
+        {
+            get { return processfilename; }
+            set
+            {
+                processfilename = value;
+
+                OnPropertyChanged(nameof(ProcessFileName));
             }
         }
         private List<string> SrcStrings = new List<string>();
@@ -196,8 +208,35 @@ namespace RemoveUnuseIDS
                 isAuto = myConfiguration.AutoMode;
                 if (isAuto)
                 {
-                    MyParams myParams = myConfiguration.Params;
+                    string jsonfiledir = System.IO.Path.Combine("JsonFile", myConfiguration.ConfigFileName);
+                    MyParams myParams =null;
+                    if (File.Exists(jsonfiledir))
+                    {
+                        string Paramconfig = File.ReadAllText(jsonfiledir);
+                        myParams = JsonConvert.DeserializeObject<MyParams>(Paramconfig);
+                    }
+                    else
+                    {
+                        ExitWithTip("请检查配置文件路径");                        
+                    }
+                    
                     srcfilenames = myParams.SrcStrings_Path;
+                    DeleteStringDir = myParams.DeleteFilePath;
+                    foreach (var dir in srcfilenames)
+                    {
+                        if (!File.Exists(dir))
+                        {
+                            ExitWithTip("SrcStrings_Path中有文件路径不存在");                            
+                        }
+                    }
+                    foreach (var dir in DeleteStringDir)
+                    {
+                        if (!File.Exists(dir))
+                        {
+                            ExitWithTip("DeleteStringDir中有文件路径不存在");
+                        }
+                    }
+
                     IsUseRegex = myParams.UseRegex;
                     FilterText = myParams.Regex;
                     ShowFilterStrings();
@@ -223,7 +262,13 @@ namespace RemoveUnuseIDS
                         filterRegexSet = new HashSet<string>(filterRegexs);
                     }
                     UnuseKeys = FliterStrings.ToHashSet();
-                    UnuseFileFinding(myParams.FindFileDir);
+                    Task task = Task.Run(() =>
+                    {
+                        
+                        UnuseFileFinding(myParams.FindFileDir);                        
+                        Status2 = "√";
+                        GenenrateFiles();
+                    });
                 }
             }
             //bool AutoMode = (bool)jsonObject["AutoMode"];
@@ -236,7 +281,11 @@ namespace RemoveUnuseIDS
 
 
         }
-
+        private void ExitWithTip(string message)
+        {
+            MessageBox.Show(message);
+            Environment.Exit(0);
+        }
         private void ChoseSrcFileClicked(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
@@ -286,7 +335,7 @@ namespace RemoveUnuseIDS
             prefixandsuffix.Add(new List<string> { prefix.Text, suffix.Text });
             if (fliterStrings.Count > 0)
             {
-                findStringsdemo.Add($"步骤2：添加前缀:  {prefix.Text}  ,后缀:  {suffix.Text}   Demo:       " + prefix.Text + fliterStrings[0] + suffix.Text);
+                FindStringsDemo.Add($"步骤2：添加前缀:  {prefix.Text}  ,后缀:  {suffix.Text}   Demo:       " + prefix.Text + fliterStrings[0] + suffix.Text);
             }
             prefix.Text = string.Empty;
             suffix.Text = string.Empty;
@@ -315,7 +364,11 @@ namespace RemoveUnuseIDS
                     //RecursivelySearchFiles(folderPath);
                     //UnuseStrings = new ObservableCollection<string>(UnuseKeys);
                     //Unusenum = UnuseStrings.Count.ToString();
-                    UnuseFileFinding(folderPath);
+                    Task.Run(() =>
+                    {
+                        UnuseFileFinding(folderPath);
+
+                    });
                     //Status1 = "√";
                     //UnuseFileFinding(folderPath, UnuseKeys);
                     //Task.Run(() =>
@@ -329,24 +382,21 @@ namespace RemoveUnuseIDS
 
 
         }
-        private  void UnuseFileFinding( string folderPath)
+        private async void UnuseFileFinding( string folderPath)
         {
+            
             // 在界面上启动任务并不阻塞 UI
-             Task.Run(() =>
-            {
                 fileCount = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories).Length;
-             
-                    
-  
                 RecursivelySearchFiles(folderPath);
                 if (ProcessBarValue != 100)
                 {
                     ProcessBarValue = 100;
                 }
+                Proessfilecount = 0;
+                fileCount = 0;
                 UnuseStrings = new ObservableCollection<string>(UnuseKeys);
                 Unusenum = UnuseStrings.Count.ToString();
                 Status1 = "√";
-            });
             
         }
 
@@ -361,7 +411,7 @@ namespace RemoveUnuseIDS
                 }
                 filterFiles.Add(filterFile.Text);
                 filterFilesSet.Add(filterFile.Text);
-                findStringsdemo.Add($"过滤包含{filterFile.Text}的文件");
+                FindStringsDemo.Add($"过滤包含{filterFile.Text}的文件");
                 filterFile.Text = string.Empty;
             }
             else
@@ -438,12 +488,10 @@ namespace RemoveUnuseIDS
                 string prefix = "<!--";
                 string suffix = "-->";
                 // 构建正则表达式
-                string pattern_conment1 = $@"^\s*{Regex.Escape(prefix)}.*{Regex.Escape(suffix)}\s*$";
-                string pattern_conment2 = @"^\s*//";
                 foreach (string file in Directory.GetFiles(directory))
                 {
                     //过滤文件
-                    Proessfilecount++;
+                     Proessfilecount++;
                     if (IsFilterFile(file))
                     {
                         
@@ -474,13 +522,15 @@ namespace RemoveUnuseIDS
                                     }
                                     this.Dispatcher.Invoke(delegate
                                     {
-                                        int value = ((Proessfilecount * 100) / fileCount);
-                                        if (ProcessBarValue != value)
+                                        //int  value = (int)((Proessfilecount * 100) / fileCount);
+                                        double value = (((double)Proessfilecount  / fileCount)*100.0);
+                                        int result = (int)value;
+                                        if (ProcessBarValue != result)
                                         {
-                                            ProcessBarValue = value;
-                                        }                                        
-                                        findStringsdemo.Add($"Found '{names}' in line: {line}");
-
+                                            ProcessBarValue = result;
+                                        }
+                                        FindStringsDemo.Add($"Found '{names}' in line:             {{{line.Trim()}}}");
+                                        scrollviewer_tip.ScrollToEnd();
                                     }
                                    );
 
@@ -499,11 +549,13 @@ namespace RemoveUnuseIDS
             {
                 MessageBox.Show(ex.ToString());
             }
+           
         }
 
         private bool IsFilterFile(string file)
         {
             string fileName = System.IO.Path.GetFileNameWithoutExtension(file);
+            ProcessFileName = System.IO.Path.GetFileName(file);
             string extensionName = System.IO.Path.GetExtension(file);
             return filterFilesSet.Contains(fileName) || filterExtensioNameSet.Contains(extensionName);
         }
@@ -524,10 +576,12 @@ namespace RemoveUnuseIDS
                     System.Windows.MessageBox.Show("无要删除的字符串");
                 }
                 DeleteStringDir = openFileDialog.FileNames;
+               
                 foreach (var item in DeleteStringDir)
                 {
                     FindStringsDemo.Add("选择删除的文件路径为:" + item);
                 }
+
                 Status2 = "√";
             }
         }
@@ -590,7 +644,7 @@ namespace RemoveUnuseIDS
             }
             filterExtensioName.Add('.' + extensioname.Text);
             filterExtensioNameSet.Add('.' + extensioname.Text);
-            findStringsdemo.Add($"过滤后缀名为{'.' + extensioname.Text}的文件");
+            FindStringsDemo.Add($"过滤后缀名为{'.' + extensioname.Text}的文件");
             extensioname.Clear();
 
 
@@ -606,7 +660,7 @@ namespace RemoveUnuseIDS
             filterRegexs.Add(filterRegex.Text);
             filterRegexSet.Add(filterRegex.Text);
 
-            findStringsdemo.Add($"过滤与正则表达式‘{filterRegex.Text}’匹配的行");
+            FindStringsDemo.Add($"过滤与正则表达式‘{filterRegex.Text}’匹配的行");
             filterRegex.Clear();
 
 
@@ -632,6 +686,10 @@ namespace RemoveUnuseIDS
 
         private void GenenrateFile_Click(object sender, RoutedEventArgs e)
         {
+            GenenrateFiles();
+        }
+        private void GenenrateFiles()
+        {
             if (DeleteStringDir.Count() <= 0)
             {
                 MessageBox.Show("先选择文件");
@@ -648,17 +706,20 @@ namespace RemoveUnuseIDS
 
                 RemoveLinesFromFile(fileName, unuseStrings);
             }
-            if (FuGai.IsChecked == false)
+            this.Dispatcher.Invoke(delegate
             {
+                if (FuGai.IsChecked == false)
+                {
 
-                MessageBox.Show("文件生成成功");
-            }
-            else
-            {
-                MessageBox.Show("成功覆盖原文件");
-            }                         
+                    MessageBox.Show("文件生成成功");
+                }
+                else
+                {
+                    MessageBox.Show("成功覆盖原文件");
+                }
+            });
+           
         }
-
         private void AddDprefixandDsuffix_Click(object sender, RoutedEventArgs e)
         {
             if (DprefixandDsuffixSet.Contains(prefix.Text + "check" + suffix.Text))
@@ -670,7 +731,7 @@ namespace RemoveUnuseIDS
             DprefixandDsuffix.Add(new List<string> { D_prefix.Text, D_suffix.Text });
             if (UnuseStrings.Count > 0)
             {
-                findStringsdemo.Add($"步骤4：添加前缀:  {D_prefix.Text}  ,后缀:  {D_suffix.Text}   Demo:       " + D_prefix.Text + UnuseStrings[0] + D_suffix.Text);
+                FindStringsDemo.Add($"步骤4：添加前缀:  {D_prefix.Text}  ,后缀:  {D_suffix.Text}   Demo:       " + D_prefix.Text + UnuseStrings[0] + D_suffix.Text);
             }
             D_prefix.Text = string.Empty;
             D_suffix.Text = string.Empty;
@@ -693,8 +754,35 @@ namespace RemoveUnuseIDS
             MessageBox.Show("清空成功");
         }
 
-        
 
-        
+        static long CountTotalLines(string folderPath)
+        {
+            long totalLines = 0;
+
+            if (Directory.Exists(folderPath))
+            {
+                string[] files = Directory.GetFiles(folderPath);
+                foreach (string file in files)
+                {
+                    int lines = File.ReadAllLines(file).Length;
+                    totalLines += lines;
+                }
+
+                string[] subDirectories = Directory.GetDirectories(folderPath);
+                foreach (string subDir in subDirectories)
+                {
+                    // 递归调用，统计子文件夹中的行数并累加到总行数中
+                    totalLines += CountTotalLines(subDir);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Folder not found.");
+            }
+
+            return totalLines;
+        }
+
+
     }
 }

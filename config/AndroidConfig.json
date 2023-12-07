@@ -1,0 +1,51 @@
+{
+
+  "AutoMode": "True",
+  "Current_Code": "Android",
+  "Params": {
+    "UseRegex": "True",
+    "Regex": "<string\\s+name=\"([^\"]+)\"",
+    "SrcStrings_Path": [
+      "E:\\task\\android-strings\\strings.xml"
+    ],
+    "prefixandsuffix": [
+      [ "\"@string/", "\"" ],
+      [ "(R.string.", ")" ]
+    ],
+
+    "UseFilter": "True",
+    "FileName_Filter": [
+
+    ],
+    "ExtensionName_Filter": [
+      ".png",
+      ".gif",
+      ".jpg",
+      ".jpeg",
+      ".svg",
+      ".git",
+      ".bmp",
+      ".zip",
+      ".exe",
+      ".sln",
+      ".dll",
+      ".ico",
+      ".pdb",
+      ".compressed",
+      ".resources"
+    ],
+    "Regex_Filter": [
+      "^\\s*//"
+    ],
+    "FindFileDir": "E:\\task\\android-code\\main",
+    "DeleteFilePath": [
+      "E:\\task\\android-strings\\strings.xml"
+    ],
+    "Delete_prefixandsuffix": [
+      [ "\"", "\"" ]
+    ]
+  }
+}
+    
+
+
